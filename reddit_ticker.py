@@ -29,16 +29,29 @@ def analysis_thread(thread_df):
     thread_df['rating'] = thread_df['sentences'].apply(vader.polarity_scores)
     thread_df = pd.concat([thread_df.drop(['rating'], axis=1), thread_df['rating'].apply(pd.Series)], axis=1)
     thread_df["tickers"] = thread_df.apply(lambda x: [], axis=1)
+    thread_df["symbol_tickers"] = thread_df.apply(lambda x: [], axis=1)
+    thread_df["name_tickers"] = thread_df.apply(lambda x: [], axis=1)
     first_sentences = thread_df.groupby('id', as_index=False).nth(0).copy()
     for index, row in tqdm(stock_df.iterrows()):
-        regexPattern = r"(^|\$|\b)({}|{})('s)?(\b|$)".format(row['Symbol'], "|".join(row["Name"]))
-        thread_df[thread_df['sentences'].str.contains(regexPattern, case=True, regex=True)].apply(lambda x: x["tickers"].append(row["Symbol"]), axis=1)
-        first_sentences[first_sentences['title'].str.contains( , case=False, regex=True)].apply(lambda x: x["tickers"].append(row["Symbol"]), axis=1)
+        try:
+            names = r"(^|\b)({})('s)?(\b|$)".format("|".join(row["Name"]))
+            symbols = r"(^|\b)(\${})('s)?(\b|$)".format(row["Symbol"])
+            symbols_text = r"(^|\b)({})('s)?(\b|$)".format(row["Symbol"])
+            #regexPattern = r"(^|\$|\b)({}|{})('s)?(\b|$)".format(row['Symbol'], "|".join(row["Name"]))
+            thread_df[thread_df['sentences'].str.contains(symbols, case=False, regex=True)].apply(
+                lambda x: x["tickers"].append(row["Symbol"]), axis=1)
+            thread_df[thread_df['sentences'].str.contains(symbols_text, case=False, regex=True)].apply(
+                lambda x: x["symbol_tickers"].append(row["Symbol"]), axis=1)
+            thread_df[thread_df['sentences'].str.contains(names, case=False, regex=True)].apply(
+                lambda x: x["name_tickers"].append(row["Symbol"]), axis=1)
+            first_sentences[first_sentences['title'].str.contains(symbols, case=False, regex=True)].apply(lambda x: x["tickers"].append(row["Symbol"]), axis=1)
+        except Exception as e:
+            print(e)
     thread_df['tickers'] = thread_df['tickers'].apply(lambda x: list(set(x)))
 
     thread_df.loc[thread_df["tickers"].map(lambda d: len(d)) == 0, "tickers"] = np.NaN
-    thread_df = thread_df.groupby(['id'], as_index=False).apply(lambda group: group.ffill())
-    thread_df.to_csv("foo.csv", index=False)
+    thread_df["tickers"] = thread_df.groupby(['id'], as_index=False)["tickers"].ffill()
+    thread_df.to_csv("data/foo.csv", index=False)
     return
 
 

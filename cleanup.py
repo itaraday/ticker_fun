@@ -3,17 +3,18 @@ from nltk.stem import WordNetLemmatizer
 from nltk import sent_tokenize, word_tokenize
 import string
 import re
-lemmatizer = WordNetLemmatizer()
 
+
+lemmatizer = WordNetLemmatizer()
 try:
     stop = stopwords.words('english')
 except:
     import nltk
-
     nltk.download('stopwords')
     stop = stopwords.words('english')
 newstop_words = ['yolo']
 stop.extend(newstop_words)
+
 
 def cleanup(text, remove_punct=False):
     clean = ' '.join([word.lower() for word in text.split() if word.lower() not in (stop)])
@@ -33,9 +34,19 @@ def make_sentences_reddit(text):
 
     # text = re.sub(r'\.+', '.', text).strip()
     # text = text.replace('\n', '. ')
+
     #turn headingings into new pharagraph
-    text = re.sub(r'(\*\*+).*?(\*\*+)', lambda x: ". {}".format(x.group().replace('*', '')), text)
-    text = re.sub(r'(\#+).*?(\#+)', lambda x: "{}".format(x.group().replace('#', '')), text)
+    def checkheading(match, symbol):
+        groups = list(match.groups())
+        regex = r"\{}+".format(symbol)
+        groups[0] = re.sub(regex, '. ', groups[0])
+        groups[2] = re.sub(regex, '', groups[2])
+        return ''.join(groups)
+
+    text = re.sub(r'(\*\*+)(.*?)(\*\*+)', lambda x: checkheading(x, symbol='*'), text)#lambda x: ". {}".format(x.group().replace('*', '')), text)
+    text = re.sub(r'(\#+)(.*?)(\#+)', lambda x: checkheading(x, symbol='#'), text)
+    #text = re.sub(r'(\*\*+)(.*?)(\*\*+)', lambda x: ". {}".format(x.group().replace('*', '')), text)
+    #text = re.sub(r'(\#+)(.*?)(\#+)', lambda x: "{}".format(x.group().replace('#', '')), text)
     #text = text.replace('\n.', '')
     sentences = sent_tokenize(text)
     return sentences

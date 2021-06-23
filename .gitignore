@@ -122,3 +122,5 @@ dmypy.json
 
 # config
 config.json
+cleanup.py
+vader.py

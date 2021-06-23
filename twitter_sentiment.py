@@ -26,6 +26,11 @@ def twitter_sentiment(twitter_df):
         symbols = r"(^|\W)(\${})('s)?(\W|$)".format(row["Symbol"])
         twitter_df[twitter_df['clean'].str.contains(symbols, case=False, regex=True)].apply(
             lambda x: x["tickers"].append(row["Symbol"]), axis=1)
+        twitter_df.apply(
+            lambda x: x["tickers"].extend(re.findall(r"\b{}\b".format(row["Symbol"]), x["hashtags"], re.IGNORECASE)), axis=1)
+        twitter_df.apply(
+            lambda x: x["tickers"].extend(re.findall(r"\b{}\b".format(row["Name"]), x["hashtags"], re.IGNORECASE)), axis=1)
+    twitter_df["tickers"] = twitter_df["tickers"].apply(lambda x: list(set(x)))
     twitter_df.to_csv("data/twitter_sentiment.csv", index=False)
 
 if __name__ == '__main__':
@@ -33,7 +38,7 @@ if __name__ == '__main__':
     twitter_df = pd.read_csv("data/tweet_df-2021-06-16.csv".format(today))
 
     urls = ["https://twitter.com/CNBC/status/1405267056358936584", "https://twitter.com/CNBC/status/1405185781719838727",
-            "https://twitter.com/CNBC/status/1405230679487512577"]
+            "https://twitter.com/CNBC/status/1405230679487512577", "https://twitter.com/CNBC/status/1405250259010338817"]
     twitter_df = twitter_df[twitter_df["url"].isin(urls)]
     twitter_sentiment(twitter_df)
     print("done")

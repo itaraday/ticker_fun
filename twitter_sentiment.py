@@ -20,7 +20,12 @@ def twitter_sentiment(twitter_df):
     #     .reset_index(level=1, drop=True) \
     #     .to_frame('sentences') \
     #     .join(twitter_df[cols], how='left')
-    twitter_df['rating'] = twitter_df['clean'].apply(vader.polarity_scores)
+
+    scores = twitter_df['clean'].apply(vader.polarity_scores)
+    scores_df = pd.DataFrame.from_records(scores)
+    twitter_df = twitter_df.join(scores_df)
+
+    #twitter_df['rating'] = twitter_df['clean'].apply(vader.polarity_scores)
     twitter_df["tickers"] = twitter_df.apply(lambda x: [], axis=1)
     for index, row in tqdm(stock_df.iterrows()):
         symbols = r"(^|\W)(\${})('s)?(\W|$)".format(row["Symbol"])
@@ -31,6 +36,7 @@ def twitter_sentiment(twitter_df):
         twitter_df.apply(
             lambda x: x["tickers"].extend(re.findall(r"\b{}\b".format(row["Name"]), x["hashtags"], re.IGNORECASE)), axis=1)
     twitter_df["tickers"] = twitter_df["tickers"].apply(lambda x: list(set(x)))
+    twitter_df['engagement'] = 3*twitter_df["replies"] + 2*twitter_df["retweets"] + twitter_df["favourites"]
     twitter_df.to_csv("data/twitter_sentiment.csv", index=False)
 
 if __name__ == '__main__':
@@ -40,5 +46,6 @@ if __name__ == '__main__':
     urls = ["https://twitter.com/CNBC/status/1405267056358936584", "https://twitter.com/CNBC/status/1405185781719838727",
             "https://twitter.com/CNBC/status/1405230679487512577", "https://twitter.com/CNBC/status/1405250259010338817"]
     twitter_df = twitter_df[twitter_df["url"].isin(urls)]
+    twitter_df.reset_index(drop=True, inplace=True)
     twitter_sentiment(twitter_df)
     print("done")

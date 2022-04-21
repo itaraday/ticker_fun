@@ -23,6 +23,17 @@ def cleanup(text, remove_punct=False):
     clean = [lemmatizer.lemmatize(word) for word in clean.split()]
     return clean
 
+def cleanup_twitter(text):
+    text = re.sub(r'\n+', ' ', text).strip()
+    # remove twitter Return handles (RT @xxx:)
+    text = re.sub(r'RT @[\w]*:', '', text)
+    # remove twitter handles (@xxx)
+    text = re.sub(r'@[\w]*', '', text)
+    # remove URL links (httpxxx)
+    text = re.sub(r"(?:\@|http?\://|https?\://|www)\S+", '', text)
+    #sentences = sent_tokenize(text)
+    return text
+
 def make_sentences_reddit(text):
     #cleanup whitespace
     text = text.replace('&nbsp;', '\n')
@@ -55,3 +66,10 @@ def remove_urls(text):
     # cleanup hyperlinkes. If it is formatted remove the hyperlink
     text = re.sub(r'\(https?:\/\/[^\s]*\s?', ' ', text, flags=re.MULTILINE)
     return text
+
+def mark_common_stock(symbol):
+    symbol = symbol.lower()
+    common = False
+    if symbol in stop:
+        common = True
+    return common

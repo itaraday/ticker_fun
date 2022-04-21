@@ -1,13 +1,16 @@
 #http://www.eoddata.com/symbols.aspx
 import pandas as pd
 from cleanco import cleanco
+from cleanup import mark_common_stock
 
 def get_stock_df():
     stock_df = pd.read_csv("data/stock_df.csv")
-    stock_df = stock_df.drop_duplicates(subset=["Symbol", "Name"])
+    stock_df = stock_df.drop_duplicates(subset=["Symbol", "Name", "Common"])
 
-    stock_df = stock_df.groupby('Symbol')['Name'].apply(lambda x: list(x)).reset_index()
-    return stock_df
+    stock_df_grp = stock_df.groupby('Symbol')['Name'].apply(lambda x: list(x)).reset_index()
+    stock_df_grp = stock_df_grp.merge(stock_df[['Symbol', "Common"]], on='Symbol', how='left')
+    stock_df_grp.drop_duplicates(subset="Symbol", inplace=True)
+    return stock_df_grp
 
 
 def get_symbols(dollars=False):
@@ -21,7 +24,7 @@ def get_symbols(dollars=False):
 
 
 if __name__ == '__main__':
-    #todo add OTC?
+    # todo add OTC?
     # http://eoddata.com/
     data_lst = ["TSX", "NYSE", "NASDAQ", "OTCBB"]
     df_lst = pd.DataFrame
@@ -43,5 +46,7 @@ if __name__ == '__main__':
     stock_df.loc[stock_df["Symbol"]=="CRSR", "Name"] = 'Corsair'
     stock_df.loc[stock_df["Symbol"] == "LOGI", "Name"] = 'Logitech'
     stock_df.loc[stock_df["Symbol"] == "DIS", "Name"] = 'Disney'
-    stock_df.to_csv("data/stock_df2.csv", index=False)
+    stock_df["Common"] = False
+    stock_df["Common"] = stock_df["Symbol"].apply(mark_common_stock)
+    stock_df.to_csv("data/stock_df.csv", index=False)
     print("done")

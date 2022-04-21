@@ -121,6 +121,6 @@ dmypy.json
 *.txt
 
 # config
-config.json
+config*.json
 cleanup.py
 vader.py
